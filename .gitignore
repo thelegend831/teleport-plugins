@@ -14,6 +14,7 @@ web/dist/app/app
 
 # editors
 .vscode
+.prettierrc
 
 # Compiled binaries, Object files, Static and Dynamic libs (Shared Objects)
 out
