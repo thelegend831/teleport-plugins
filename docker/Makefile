@@ -79,7 +79,7 @@ check-license:
 build-teleport-image:
 	docker build -t teleport-ent:latest -f ./teleport/Dockerfile .
 
-# `make configure` provisions configs for the `teleport cluster: 
+# `make config` provisions configs for the `teleport cluster: 
 # 1. Creates the role and user for tests
 # 2. Creates the role and user for plugins to run with 
 # 3. Exports the access-plugin certs so that we can later use them for plugins. 
