@@ -8,28 +8,23 @@ ENTERPRISE_LICENSE ?= ../e/fixtures/license-enterprise.pem
 PRO_LICENSE ?= ../e/fixtures/license-pro.pem
 # whether to look for enterprise or pro license
 # MODE ?= enterprise
-# `open` mode skips the license check. 
+# `open` mode skips the license check.
 MODE ?= open
 
 # source directory in the build box
 SRCDIR ?= /gopath/src/github.com/gravitational/teleport-plugins
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 
-# This is the Teleport version that will be used for the Teleport image.
-# It can be any _released_ version, as the image will try to install the
-# enterprise version of Teleport.
-VERSION=4.2.10
-GITTAG=v$(VERSION)
-OS ?= $(shell go env GOOS)
-ARCH ?= $(shell go env GOARCH)
-RELEASE=teleport-ent-$(GITTAG)-$(OS)-$(ARCH)-bin
+# Teleport Enterprise Binary release name. Can be any teleport
+# enterprise version, but has to be available on get.gravitational.com
+RELEASE=teleport-ent-v4.3.0-linux-amd64-bin
 
 RUNTIME ?= go1.13.2
 BBOX = teleport-buildbox:$(RUNTIME)
 
 #
 # Default target starts a teleport cluster with a single node,
-# provisions all the required configurations for users and roles, 
+# provisions all the required configurations for users and roles,
 # and then starts all the plugins.
 #
 .PHONY: up
@@ -70,6 +65,12 @@ check-license:
 		mkdir -p ./data/two/auth && cp $(PRO_LICENSE) ./data/two/auth/license.pem; \
 	fi
 
+
+.PHONY: create-dirs
+create-dirs:
+	mkdir -p ./data/var/lib/teleport/plugins/slack
+
+
 # builds teleport:latest docker image
 # Using the ../../teleport's docker instructions
 # Note: This doesn't build Teleport itself. If you need to build teleport,
@@ -80,24 +81,23 @@ build-teleport-image:
 	docker build -t teleport-ent:latest -f ./teleport/Dockerfile \
 		--build-arg RELEASE=$(RELEASE) .
 
-# `make config` provisions configs for the `teleport cluster: 
+# `make config` provisions configs for the `teleport cluster:
 # 1. Creates the role and user for tests
-# 2. Creates the role and user for plugins to run with 
-# 3. Exports the access-plugin certs so that we can later use them for plugins. 
+# 2. Creates the role and user for plugins to run with
+# 3. Exports the access-plugin certs so that we can later use them for plugins.
 #
 .PHONY: config
 config:
-	docker-compose start teleport
-	
+	docker-compose up -d teleport
+
 	# ----> Creating dummy roles for requests and plugins to use.
 	docker-compose exec teleport /bin/bash -c "tctl create -f \$$PLUGINSHOME/docker/teleport/foo-role.yaml"
 	docker-compose exec teleport /bin/bash -c "tctl create -f \$$PLUGINSHOME/docker/teleport/access-plugin-user-role.yaml"
-	
+
 	# ----> Exporting certificates.
-	docker-compose exec teleport /bin/bash -c "tctl auth sign --format=tls --user=access-plugin --out=plug"	
+	docker-compose exec teleport /bin/bash -c "tctl auth sign --format=tls --user=access-plugin --out=plug"
 	docker-compose exec teleport /bin/bash -c "mkdir -p /mnt/shared/certs/access-plugin && mv plug.* /mnt/shared/certs/access-plugin/"
 
-	# ----> Stoppig Teleport's VM.
 	docker-compose stop teleport
 
 # Builds teleport-slack:latest docker image
