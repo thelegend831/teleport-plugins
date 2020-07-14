@@ -49,7 +49,22 @@ If the command above fails, try building the buildbox fist:
 
 ```bash
 cd ../build.assts
-make build
+make buildbox
+```
+
+This will build the buildbox container for you, and tag it for quay. If you
+don't have access to that, you can run the command that make runs yourself, but
+with `-t teleport-builbox:go-{GOVERSION}`, like that:
+
+```bash
+# In the teleport/build.assets dir:
+docker build \
+	--build-arg UID=(id -u) \
+	--build-arg GID=(id -g) \
+	--build-arg RUNTIME=go1.13.2 \
+	--cache-from quay.io/gravitational/teleport-buildbox:go1.13.2 \
+	-t teleport-buildbox:go1.13.2
+	.
 ```
 
 #### Building `teleport-ent:latest`
@@ -64,13 +79,13 @@ Docker image running the enterprise version. This flow calls this immage
 make build-teleport-image
 ```
 
-_Note: you can pass a `-e RELEASE=binary-teleport-ent-name-to-download` to
+_*Note*: you can pass a `-e RELEASE=binary-teleport-ent-name-to-download` to
 docker build command if you want to — that would install a specified Teleport
 Enterprise version to the container. All the build does, actually, is it takes
 the OSS built `teleport:latest`, downloads the Teleport Enterprise edition, and
 installs it._
 
-_Note: this setup \*\*requires you to bring your own Teleport Enterprise License
+_*Note*: this setup requires you to bring your own Teleport Enterprise License
 and put it to `data/var/lib/teleport/license.pam`. Enterprise features, and
 hence the whole flow, might not work otherwise._
 

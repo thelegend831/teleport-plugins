@@ -22,7 +22,7 @@ VERSION=4.2.10
 GITTAG=v$(VERSION)
 OS ?= $(shell go env GOOS)
 ARCH ?= $(shell go env GOARCH)
-RELEASE=teleport-$(GITTAG)-$(OS)-$(ARCH)-bin
+RELEASE=teleport-ent-$(GITTAG)-$(OS)-$(ARCH)-bin
 
 RUNTIME ?= go1.13.2
 BBOX = teleport-buildbox:$(RUNTIME)
@@ -77,7 +77,8 @@ check-license:
 #
 .PHONY: build-teleport-image
 build-teleport-image:
-	docker build -t teleport-ent:latest -f ./teleport/Dockerfile .
+	docker build -t teleport-ent:latest -f ./teleport/Dockerfile \
+		--build-arg RELEASE=$(RELEASE) .
 
 # `make config` provisions configs for the `teleport cluster: 
 # 1. Creates the role and user for tests
