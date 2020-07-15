@@ -1,4 +1,16 @@
 version: "2"
+
+x-plugin: &plugin
+  image: teleport-plugins:latest
+  env_file:
+    - teleport.env
+  mem_limit: 300M
+  volumes:
+    - ./data/var/lib/teleport:/var/lib/teleport
+    - ../../teleport:/root/go/src/github.com/gravitational/teleport
+    - ..:/root/go/src/github.com/gravitational/teleport-plugins
+    - certs:/mnt/shared/certs
+
 services:
   # Teleport is a single-node Teleport cluster running all 3 services (Auth, Proxy, and Web).
   # It assumes that teleport source code is in the same parent dir as teleport-plugins, i.e.
@@ -29,23 +41,25 @@ services:
           - "teleport.cluster.local"
 
   teleport-slack:
-    image: teleport-slack:latest
-    container_name: teleport_slack_plugin
-    command: ${PLUGINSHOME}/access/slack/build/teleport-slack start -c ${PLUGINSHOME}/docker/slack/teleport-slack.toml
-    env_file:
-      - teleport.env
-    mem_limit: 300M
-    volumes:
-      - ./data/var/lib/teleport:/var/lib/teleport
-      - ../../teleport:/root/go/src/github.com/gravitational/teleport
-      - ..:/root/go/src/github.com/gravitational/teleport-plugins
-      - certs:/mnt/shared/certs
-
+    <<: *plugin
+    container_name: teleport-slack
+    command: ${PLUGINSHOME}/access/slack/build/teleport-slack start -c ${PLUGINSHOME}/docker/plugins/teleport-slack.toml
     networks:
       teleport-network:
         ipv4_address: 172.10.1.41
         aliases:
           - "teleport-slack.cluster.local"
+
+  teleport-mattermost:
+    <<: *plugin
+    container_name: teleport-mattermost
+    command: ${PLUGINSHOME}/access/mattermost/build/teleport-mattermost start -c ${PLUGINSHOME}/docker/plugins/teleport-mattermost.toml
+    networks:
+      teleport-network:
+        ipv4_address: 172.10.1.42
+        aliases:
+          - "teleport-mattermost.cluster.local"
+
 
 # This piece is straight from teleport's docker-compose
 networks:

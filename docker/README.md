@@ -98,10 +98,22 @@ teleport-plugins, they shouldn't interfere with each other.
 Please refer to Teleport's Docker documentation for more details about it's
 configuration.
 
-#### Plugin(s) Docker images
+#### Building plugins and their docker images
 
-Each plugin will build it's own Docker image internally, but those will be built
-automatically with `docker-compose` via a makefile command, described below.
+The flow uses the code in your `teleport-plugins` repo clone to build and run
+the plugins. To test different versions, redo this part for a different branch.
+
+To prepare the plugins, we'll build them all in the build box (the Docker image
+used to build Teleport itself), and then, we'll use a separate Docker image to
+run those plugins that we've just built, using the same architecture as we used
+for the buildbox.
+
+`make plugins` will first run the buildbox to build all the plugins, and then
+build their docker image.
+
+```bash
+make plugins
+```
 
 #### Configuration
 
@@ -114,8 +126,22 @@ For the plugins to work, each plugin needs:
 
 ### Starting
 
+#### First start
+
+Before starting testing, you'll need to provision the Teleport cluster
+configuration: multiple user roles and accounts for the plugins to work, and
+their auth certificates, then export them to /mnt/shared/certs.
+
 ```bash
-make up # Starts a single node Teleport cluster and a Teleport Slack plugin alongside it.
+make config
+```
+
+#### Starting
+
+```bash
+make up # Starts a single node Teleport cluster and all of the available plugins via docker-compose.yml
+
+docker-compose up teleport teleport-slack # Will only start Teleport and Teleport Slack plugin
 ```
 
 ### Stopping

@@ -12,7 +12,7 @@ PRO_LICENSE ?= ../e/fixtures/license-pro.pem
 MODE ?= open
 
 # source directory in the build box
-SRCDIR ?= /gopath/src/github.com/gravitational/teleport-plugins
+SRCDIR ?= /go/src/github.com/gravitational/teleport-plugins
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 
 # Teleport Enterprise Binary release name. Can be any teleport
@@ -43,16 +43,7 @@ down:
 #
 .PHONY:enter-teleport
 enter-teleport:
-	docker-compose exec teleport /bin/bash
-
-# `make enter-sshd` gives you shell inside sshd container
-.PHONY:enter-teleport-sshd
-enter-sshd:
-	docker-compose exec one-sshd /bin/bash
-
-.PHONY: export-certs
-export-certs:
-	docker-compose exec teleport /bin/bash -c "tctl auth export --type=user | sed s/cert-authority\ // > /mnt/shared/certs/teleport.pub"
+	docker-compose run teleport /bin/bash
 
 .PHONY: check-license
 check-license:
@@ -76,8 +67,8 @@ create-dirs:
 # Note: This doesn't build Teleport itself. If you need to build teleport,
 # go to teleport repo root, and run make -c build.assets
 #
-.PHONY: build-teleport-image
-build-teleport-image:
+.PHONY: teleport-ent
+teleport-ent:
 	docker build -t teleport-ent:latest -f ./teleport/Dockerfile \
 		--build-arg RELEASE=$(RELEASE) .
 
@@ -100,18 +91,20 @@ config:
 
 	docker-compose stop teleport
 
-# Builds teleport-slack:latest docker image
+# Builds teleport-plugins:latest docker image that will run plugins in it.
 #
-.PHONY: build-slack-image
-build-slack-image:
-	docker build -t teleport-slack:latest . -f ./slack/Dockerfile
+.PHONY: plugins
+plugins: build-plugins
+	docker build -t teleport-plugins:latest . -f ./plugins/Dockerfile
 
 # Builds all of the extensions inside the build box docker container.
 #
 .PHONY: build-plugins
 build-plugins:
-	docker run -v $(MKFILE_PATH)/../../:/gopath/src/github.com/gravitational/teleport-plugins $(BBOX) \
-		make -C $(SRCDIR) build-all
+	docker run \
+		-v $(MKFILE_PATH)/../../:$(SRCDIR) \
+		$(BBOX) \
+			make -C $(SRCDIR) build-all
 
 .PHONY: clean
 clean:
